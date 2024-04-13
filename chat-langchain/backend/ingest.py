@@ -13,14 +13,23 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.utils.html import PREFIXES_TO_IGNORE_REGEX, SUFFIXES_TO_IGNORE_REGEX
 from langchain_community.vectorstores import Weaviate
 from langchain_core.embeddings import Embeddings
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# embeddings = AzureOpenAIEmbeddings(
+#     azure_deployment="text-embedding-ada-002-felix",
+#     openai_api_version="2023-12-01-preview",
+# )
 
 def get_embeddings_model() -> Embeddings:
-    return OpenAIEmbeddings(model="text-embedding-3-small", chunk_size=200)
+    return AzureOpenAIEmbeddings(
+        azure_deployment="text-embedding-ada-002-felix",
+        openai_api_version="2023-12-01-preview",
+    )
 
 
 def metadata_extractor(meta: dict, soup: BeautifulSoup) -> dict:
@@ -97,15 +106,21 @@ def load_api_docs():
 def ingest_docs():
     WEAVIATE_URL = os.environ["WEAVIATE_URL"]
     WEAVIATE_API_KEY = os.environ["WEAVIATE_API_KEY"]
-    RECORD_MANAGER_DB_URL = os.environ["RECORD_MANAGER_DB_URL"]
+    DATABASE_HOST = os.environ["DATABASE_HOST"]
+    DATABASE_PORT = os.environ["DATABASE_PORT"]
+    DATABASE_USERNAME = os.environ["DATABASE_USERNAME"]
+    DATABASE_PASSWORD = os.environ["DATABASE_PASSWORD"]
+    DATABASE_NAME = os.environ["DATABASE_NAME"]
+    RECORD_MANAGER_DB_URL = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+    # RECORD_MANAGER_DB_URL = os.environ["RECORD_MANAGER_DB_URL"]
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
     embedding = get_embeddings_model()
 
     client = weaviate.Client(
-        url=WEAVIATE_URL,
-        auth_client_secret=weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY),
+        url=WEAVIATE_URL,     
     )
+    # auth_client_secret=weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY),
     vectorstore = Weaviate(
         client=client,
         index_name=WEAVIATE_DOCS_INDEX_NAME,

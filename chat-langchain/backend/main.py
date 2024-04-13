@@ -11,7 +11,7 @@ from langserve import add_routes
 from langsmith import Client
 from pydantic import BaseModel
 
-client = Client()
+# client = Client()
 
 app = FastAPI()
 app.add_middleware(

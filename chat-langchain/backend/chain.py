@@ -32,8 +32,10 @@ from langchain_core.runnables import (
 )
 from langchain_fireworks import ChatFireworks
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-from langsmith import Client
+from langchain_openai import AzureChatOpenAI
+# from langsmith import Client
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
 
 RESPONSE_TEMPLATE = """\
 You are an expert programmer and problem-solver, tasked with answering any question \
@@ -104,7 +106,7 @@ Follow Up Input: {question}
 Standalone Question:"""
 
 
-client = Client()
+# client = Client()
 
 app = FastAPI()
 app.add_middleware(
@@ -129,8 +131,8 @@ class ChatRequest(BaseModel):
 def get_retriever() -> BaseRetriever:
     weaviate_client = weaviate.Client(
         url=WEAVIATE_URL,
-        auth_client_secret=weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY),
     )
+    # auth_client_secret=weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY),
     weaviate_client = Weaviate(
         client=weaviate_client,
         index_name=WEAVIATE_DOCS_INDEX_NAME,
@@ -235,8 +237,9 @@ def create_chain(llm: LanguageModelLike, retriever: BaseRetriever) -> Runnable:
         | response_synthesizer
     )
 
+gpt_3_5 = AzureChatOpenAI(temperature=0.0, openai_api_version="2023-12-01-preview", azure_deployment="gpt-35-turbo-felix", openai_api_key=os.getenv("AZURE_OPENAI_KEY"))
 
-gpt_3_5 = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0, streaming=True)
+# gpt_3_5 = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0, streaming=True)
 claude_3_sonnet = ChatAnthropic(
     model="claude-3-sonnet-20240229",
     temperature=0,
