@@ -1,0 +1,37 @@
+name: Update index
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Whether to overwrite documents found in the record manager'
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron:  '0 13 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Indexing
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "yarn"
+      - name: Install dependencies
+        run: yarn install --immutable --mode=skip-build
+      - name: Build backend
+        run: yarn build --filter=backend
+      - name: Ingest docs
+        run: yarn workspace backend ingest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WEAVIATE_URL: ${{ secrets.WEAVIATE_URL }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+          WEAVIATE_INDEX_NAME: ${{ secrets.WEAVIATE_INDEX_NAME }}
+          RECORD_MANAGER_DB_URL: ${{ secrets.RECORD_MANAGER_DB_URL }}
+          FORCE_UPDATE: ${{ github.event.inputs.force_update }}
